@@ -46,7 +46,7 @@
          <!--注册验证码-->
          <el-form-item prop="emailCode" v-if="opType==0||opType==2">
             <div class="send-email-panel">
-                    <el-input
+                <el-input
                 clearable
                 size="large"
                 placeholder="请输入邮箱验证码"
@@ -191,12 +191,16 @@
 </template>
 
 <script setup>
-
+import md5 from "js-md5";
 import { ref,reactive,getCurrentInstance,nextTick } from 'vue';
 import { useRouter,useRoute } from "vue-router";
+import {useStore} from "vuex";
+
+const store=useStore();
 const {proxy}=getCurrentInstance();
 const router=useRouter();
 const route=useRoute();
+
 const api={
     checkCode:"./api/checkCode",
     sendMailCode:"/sendEmailCode",
@@ -262,7 +266,6 @@ const showSendMailDialog=()=>{
             nextTick(()=>{
                 changeCheckCode(1);
                 formData4SendCodeRef.value.resetFields();
-                //
                 formData4SendCode.value={
                     email:formData.value.email,
                 }
@@ -277,7 +280,7 @@ const sendEmailCode=()=>{
             return;
         }
             const params=Object.assign({},formData4SendCode.value);
-            params.type=0;
+            params.type= opType.value==0? 0:1;
             let result=await proxy.Request({
                 url:api.sendMailCode,
                 params:params,
@@ -288,8 +291,6 @@ const sendEmailCode=()=>{
             if(!result){
                 return;
             }
-
-        
     })
 }
 
@@ -335,10 +336,19 @@ const Submit=()=>{
         let params={};
         Object.assign(params,formData.value);
 
-        //注册
-        if(opType.value==0){
+        //注册(部分功能与重置密码重合)
+        if(opType.value==0||opType.value==2){
             params.password=params.regPassword;
         }
+        //登录
+        if(opType.value==1){
+            let cookieLoginInfo=proxy.VueCookies.get("loginInfo");
+            let cookiePassword= cookieLoginInfo==null? null:cookieLoginInfo.password;
+            if(params.password!==cookiePassword){
+                params.password=md5(params.password);
+            }
+        }
+
         let url=null;
         if(opType.value==0){
             url=api.register;
@@ -355,7 +365,6 @@ const Submit=()=>{
                 changeCheckCode(0);
             }
         })
-
         if(!result){
             return;
         }
@@ -364,15 +373,28 @@ const Submit=()=>{
             proxy.Message.success("注册成功！请登录~");
             showPanel(1);
         }else if(opType.value==1){
-
+            //登录
+            if(params.rememberMe){
+                const loginInfo={
+                    email:params.email,
+                    password:params.password,
+                    rememberMe:params.rememberMe,
+                }
+                proxy.VueCookies.set("loginInfo",loginInfo,"7d");
+            }else{
+                proxy.VueCookies.remove("loginInfo");
+            }
+            dialogConfig.centerDialogVisible=false;
+            proxy.Message.success("登陆成功~");
+            store.commit("updateLoginUserInfo",result.data);
+        }else if(opType.value==2){
+            //重置密码
+            proxy.Message.success("重置成功！请登录~");
+            showPanel(1);
         }
+        
     })
 }
-
-
-
-
-
 
 //重置表单
 const resetForm=()=>{
@@ -386,9 +408,18 @@ const resetForm=()=>{
     }
     //表单刷新
     nextTick(()=>{
-        debugger;
         changeCheckCode(0);
         formDataRef.value.resetFields();
+        formData.value={};
+
+        if(opType.value==1){
+            const cookieLoginInfo = proxy.VueCookies.get("loginInfo");
+            if(cookieLoginInfo){
+                formData.value=cookieLoginInfo;
+            }
+        }
+
+
     });
 };
 

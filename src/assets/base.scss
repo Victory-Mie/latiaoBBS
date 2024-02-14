@@ -23,7 +23,9 @@
 
 /* semantic color variables for this project */
 :root {
-  --color-background: var(--vt-c-white);
+  --el-color-primary:#ff9d00;
+  --el-color-primary-light-3: #f6d365;
+  --color-background: var(--vt-c-white-mute);
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
 
@@ -99,14 +101,21 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
 .a-link{
   text-decoration: none;
-  color:#fda085;
+  color:#ff9d00;
 }
+
 .el-form-item{
   align-items: center;
 }
+
+.container-body{
+  margin:0px auto;
+  padding-top: 10px;
+}
 /*
 主题颜色
-background-image: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+background-image: linear-gradient(120deg, #f6d365 0%, #ff9d00 100%);
 */
